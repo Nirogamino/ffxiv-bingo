@@ -18,8 +18,6 @@
   <p class="sub">Escribe tus 24 apuestas, valídalas y mira en vivo quién acierta.</p>
 </header>
 
-<div id="notice" class="notice hidden"></div>
-
 <div class="layout">
   <section>
     <div class="panel" id="joinPanel">
@@ -39,8 +37,7 @@
       <p class="msg" id="validMsg"></p>
       <div class="row">
         <button id="lockBtn" class="primary">🔒 Validar y bloquear</button>
-        <button id="unlockBtn" class="small hidden">Desbloquear</button>
-        <button id="exportBtn" class="small">Exportar</button>
+        <button id="shotBtn">📸 Captura</button>
       </div>
     </div>
   </section>
@@ -78,7 +75,8 @@
 <footer>Hecho por fans · No afiliado a SQUARE ENIX</footer>
 <div id="toast"></div>
 
-<script src="firebase-config.js" onerror="console.log('sin firebase, modo local')"></script>
+<script src="firebase-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

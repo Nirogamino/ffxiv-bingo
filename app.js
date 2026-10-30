@@ -7,7 +7,6 @@ LINES.push([0, 6, 12, 18, 24], [4, 8, 12, 16, 20]);
 
 const $ = s => document.querySelector(s);
 
-// ---------- utils ----------
 function normalize(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ').trim();
@@ -48,7 +47,6 @@ function toast(msg) {
   toast.t = setTimeout(() => t.classList.remove('show'), 2800);
 }
 
-// ---------- state ----------
 let myId = localStorage.getItem('ffb_myId') || '';
 if (!myId) { myId = 'u' + Math.random().toString(36).slice(2, 12); localStorage.setItem('ffb_myId', myId); }
 let myCard = null;
@@ -57,7 +55,7 @@ let confirmed = {};
 let viewing = null;
 let hostOpen = false;
 let useFirebase = false;
-let fdb = null; // {db, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot}
+let fdb = null;
 
 function validate() {
   if (!myCard) return 'Sin cartón.';
@@ -75,7 +73,6 @@ function validate() {
   return null;
 }
 
-// ---------- UI ----------
 function buildGrid(container, cells, editable) {
   container.innerHTML = '';
   for (let i = 0; i < 25; i++) {
@@ -119,9 +116,8 @@ function renderMe() {
   const hits = countHits(cells), lines = countLines(cells), filled = countFilled(cells);
   const err = validate();
   $('#myStatus').textContent =
-    `Aciertos ${hits}/24 · Líneas ${lines} · Escritas ${filled}/24 · ${myCard.locked ? '🔒 Validado' : 'Sin validar'} · ${useFirebase ? 'en vivo ☁️' : 'local 📁'}`;
+    `Aciertos ${hits}/24 · Líneas ${lines} · Escritas ${filled}/24 · ${myCard.locked ? '🔒 Validado' : 'Sin validar'}`;
   $('#lockBtn').classList.toggle('hidden', myCard.locked);
-  $('#unlockBtn').classList.toggle('hidden', !myCard.locked);
   $('#lockBtn').disabled = !!err;
   $('#validMsg').textContent = myCard.locked ? '' : (err || '¡Todo listo! Ya puedes validar.');
   const b = $('#bingoBanner');
@@ -191,7 +187,6 @@ function renderHost() {
 }
 function render() { renderMe(); renderBoard(); renderFeed(); renderViewer(); if (hostOpen) renderHost(); }
 
-// ---------- storage ----------
 function persistLocal() {
   localStorage.setItem('ffb_cards', JSON.stringify(cards));
   localStorage.setItem('ffb_confirmed', JSON.stringify(confirmed));
@@ -266,19 +261,6 @@ async function lockCard() {
     render();
   }
 }
-async function unlockCard() {
-  if (useFirebase) {
-    try {
-      const { doc, updateDoc } = fdb;
-      await updateDoc(doc(fdb.db, 'cards', myId), { locked: false });
-      buildGrid($('#myGrid'), myCard.cells, true);
-    } catch (e) { toast(e.message); }
-  } else {
-    myCard.locked = false; cards[myId].locked = false; persistLocal();
-    buildGrid($('#myGrid'), myCard.cells, true);
-    render();
-  }
-}
 async function toggleBet(k, text, on) {
   if (useFirebase) {
     try {
@@ -293,10 +275,9 @@ async function toggleBet(k, text, on) {
   }
 }
 
-// ---------- init firebase (opcional) ----------
 async function tryFirebase() {
   const cfg = window.FIREBASE_CONFIG;
-  if (!cfg || !cfg.apiKey || cfg.apiKey.includes('PEGA_AQUI')) return false;
+  if (!cfg || !cfg.apiKey || String(cfg.apiKey).includes('PEGA_AQUI')) return false;
   try {
     const appMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
     const fsMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
@@ -310,14 +291,11 @@ async function tryFirebase() {
     fsMod.onSnapshot(fsMod.collection(db, 'cards'), snap => {
       cards = {};
       snap.docs.forEach(d => { cards[d.id] = d.data(); });
-      // si es mi primera vez, crear; si ya existe, sincronizar
       if (cards[myId]) {
         const mine = cards[myId];
-        const localName = localStorage.getItem('ffb_name');
         myCard = { name: mine.name, cells: padCells(mine.cells), locked: !!mine.locked };
+        const active = document.activeElement && document.activeElement.tagName === 'TEXTAREA';
         if (!myCard.locked) {
-          // reconstruir grid solo si no estoy escribiendo: hacerlo simple, no pisar foco
-          const active = document.activeElement?.tagName === 'TEXTAREA';
           if (!active) buildGrid($('#myGrid'), myCard.cells, true);
         } else {
           buildGrid($('#myGrid'), myCard.cells, false);
@@ -333,35 +311,32 @@ async function tryFirebase() {
       render();
     });
     return true;
-  } catch (e) {
-    console.warn('Firebase falló, modo local:', e);
+  } catch {
     return false;
   }
 }
 
-// ---------- events ----------
 $('#joinForm').onsubmit = e => { e.preventDefault(); joinGame($('#nameInput').value); };
 $('#lockBtn').onclick = lockCard;
-$('#unlockBtn').onclick = unlockCard;
+$('#shotBtn').onclick = async () => {
+  if (!myCard) return;
+  if (!window.html2canvas) { toast('No se pudo cargar la captura, revisa tu conexión.'); return; }
+  toast('Generando captura…');
+  try {
+    const canvas = await window.html2canvas($('#cardPanel'), { backgroundColor: '#0c1222', scale: 2, useCORS: true });
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `bingo-${(myCard.name || 'carton').replace(/\s+/g, '-').toLowerCase()}.png`;
+    a.click();
+  } catch { toast('No se pudo hacer la captura.'); }
+};
 $('#board').onclick = e => { const tr = e.target.closest('tr[data-id]'); if (tr) { viewing = tr.dataset.id; renderViewer(); } };
 $('#hostBtn').onclick = () => { hostOpen = !hostOpen; $('#hostPanel').classList.toggle('hidden', !hostOpen); if (hostOpen) renderHost(); };
-$('#exportBtn').onclick = () => {
-  if (!myCard) return;
-  const blob = new Blob([JSON.stringify({ name: myCard.name, cells: myCard.cells }, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = `bingo-${myCard.name || 'carton'}.json`; a.click();
-};
 
 (async function init() {
   $('#nameInput').value = localStorage.getItem('ffb_name') || '';
   const ok = await tryFirebase();
-  const n = $('#notice');
-  if (ok) {
-    n.textContent = '☁️ Modo en vivo: todos los que abran esta página comparten cartones.';
-    n.classList.remove('hidden');
-  } else {
-    n.textContent = '📁 Modo local: funciona sin configurar nada. Para jugar en vivo entre móviles/PCs, configura Firebase (ver README).';
-    n.classList.remove('hidden');
+  if (!ok) {
     loadLocal();
     window.addEventListener('storage', loadLocal);
   }
