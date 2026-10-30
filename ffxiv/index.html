@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fan Festival Bingo 2026</title>
+<link rel="icon" href="omega.svg">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="eyebrow">Final Fantasy XIV · Fan Festival 2026</div>
+  <div class="hero">
+    <img class="omega" src="omega.svg" alt="Omega">
+  </div>
+  <h1>FAN FESTIVAL BINGO</h1>
+  <p class="sub">Escribe tus 24 apuestas, valídalas y mira en vivo quién acierta.</p>
+</header>
+
+<div id="notice" class="notice hidden"></div>
+
+<div class="layout">
+  <section>
+    <div class="panel" id="joinPanel">
+      <h2>01 · Entra</h2>
+      <form id="joinForm" class="row">
+        <input id="nameInput" maxlength="20" placeholder="WoL" autocomplete="nickname">
+        <button type="submit" class="primary">Entrar</button>
+      </form>
+      <p class="status">Escribe 24 apuestas antes de que empiece el show. La casilla central ya es gratis.</p>
+    </div>
+
+    <div class="panel hidden" id="cardPanel">
+      <h2>02 · Tu cartón</h2>
+      <div id="bingoBanner" class="bingo hidden"></div>
+      <p class="status" id="myStatus"></p>
+      <div class="grid" id="myGrid"></div>
+      <p class="msg" id="validMsg"></p>
+      <div class="row">
+        <button id="lockBtn" class="primary">🔒 Validar y bloquear</button>
+        <button id="unlockBtn" class="small hidden">Desbloquear</button>
+        <button id="exportBtn" class="small">Exportar</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <h2>En vivo</h2>
+      <table>
+        <thead><tr><th>WoL</th><th>Aciertos</th><th>Líneas</th><th>Escritas</th></tr></thead>
+        <tbody id="board"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <h2>Ya ha pasado</h2>
+      <ul class="feed" id="feed"></ul>
+    </div>
+
+    <div class="panel hidden" id="viewPanel">
+      <h2 id="viewTitle">Cartón</h2>
+      <div class="grid" id="viewGrid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Presentador</h2>
+      <button id="hostBtn">📣 Confirmar apuestas</button>
+      <div id="hostPanel" class="hidden">
+        <p class="status">Toca una apuesta cuando ocurra. Se marca en todos los cartones a la vez. Vuelve a tocarla para deshacerlo.</p>
+        <div class="betlist" id="hostList"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>Hecho por fans · No afiliado a SQUARE ENIX</footer>
+<div id="toast"></div>
+
+<script src="firebase-config.js" onerror="console.log('sin firebase, modo local')"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
